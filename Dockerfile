@@ -6,6 +6,7 @@ RUN apt update
 RUN apt install -y git
 RUN apt install -y curl
 
+# This must be manually copied to the host machine since it's not part of the GH repo
 COPY ./zulu23.30.13-ca-crac-jdk23.0.1-linux_aarch64.tar.gz .
 RUN tar -xzvf zulu23.30.13-ca-crac-jdk23.0.1-linux_aarch64.tar.gz
 
@@ -17,6 +18,7 @@ RUN git clone https://github.com/spring-projects/spring-petclinic
 RUN cd ./spring-petclinic && git checkout 923e2b7aa331b8194a6579da99fb6388f15d7f3e
 # Build SpringBoot PetClinic Java service
 RUN cd ./spring-petclinic && ./mvnw -Dmaven.test.skip=true clean package
+RUN mv /spring-petclinic/target/spring-petclinic-3.1.0-SNAPSHOT.jar /spring-petclinic/target/spring-petclinic.jar 
 
 # Add New Relic Java agent jar to work directory
 RUN curl -O https://download.newrelic.com/newrelic/java-agent/newrelic-agent/current/newrelic.jar
@@ -37,6 +39,6 @@ ENV NEW_RELIC_METRIC_INGEST_URI=https://metric-api.newrelic.com/metric/v1
 ENV NEW_RELIC_EVENT_INGEST_URI=https://insights-collector.newrelic.com/v1/accounts/events
 
 # Run SpringBoot PetClinic Java service with the New Relic Java agent attached
-CMD java -javaagent:newrelic.jar -jar /spring-petclinic/target/spring-petclinic*.jar
+CMD java -javaagent:newrelic.jar -XX:CRaCCheckpointTo=cr -Djdk.crac.collect-fd-stacktraces=true -XX:CRaCMinPid=70000 -jar /spring-petclinic/target/spring-petclinic.jar
 # TODO Use below line instead to run without the Java agent
 #CMD java -jar spring-petclinic*.jar
